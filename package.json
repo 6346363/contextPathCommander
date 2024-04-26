@@ -1,23 +1,70 @@
 {
   "name": "contextpathcommander",
-  "displayName": "ContextPathCommander",
-  "description": "「ContextPathCommander」は、VSCodeのエクスプローラー内でファイルを右クリックした際に、ファイルパスに基づいて特定のコマンドを実行することができる拡張機能です。設定ファイルで、表示されるコマンドの名前や実行するスクリプトをカスタマイズできます。\"ContextPathCommander\" is a VSCode extension that allows users to execute specific commands based on the file path by right-clicking on files within the Explorer. Through a configuration file, users can customize the names of the commands displayed and the scripts that are executed.",
-  "version": "0.0.1",
+  "displayName": "Context Path Commander",
+  "description": "\"ContextPathCommander\" is a VSCode extension that allows users to execute specific commands based on the file path by right-clicking on files within the Explorer. Through a configuration file, users can customize the names of the commands displayed and the scripts that are executed.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/6346363/contextPathCommander"
+  },
+  "version": "0.0.4",
+  "publisher": "techback",
   "engines": {
     "vscode": "^1.88.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:extension.showCommands"
+  ],
   "main": "./out/extension.js",
+  "icon": "./images/icon.png",
   "contributes": {
     "commands": [
       {
-        "command": "contextpathcommander.helloWorld",
-        "title": "Hello World"
+        "command": "extension.showCommands",
+        "title": "Context Path Commander",
+        "category": "Custom Commands"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "extension.showCommands",
+          "group": "6_copyPath"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "extension.showCommands",
+          "group": "6_copyPath"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "ContextPathCommander Settings",
+      "properties": {
+          "contextPathCommander.commands": {
+              "type": "array",
+              "markdownDescription":"List of commands that users can configure to appear in the QuickPick interface when triggered from either the context menu of the Explorer or an open editor. These commands can perform specific operations based on the file path selected. Use `${relativePath}`/`${absolutePath}`/`${dotSeparatedPath}` as a placeholder in the script where you want the file path to be inserted.\n`${relativePath}` provides a file's path relative to the project's root, useful for project-specific scripts. `${absolutePath}` indicates a file's full system path, ideal for cross-directory operations. `${dotSeparatedPath}` formats paths with dots, crucial for referencing files in Python testing scripts. \n\n__Example:__\n ```json\n[\n  {\n    \"title\": \"cat command\",\n    \"script\": \"cat ${relativePath}\",\n    \"description\": \"Show File Content\"  },\n  {\n    \"title\": \"cp command\",\n    \"script\": \"cp ${absolutePath} ./backup/\",\n    \"description\": \"Copy File\",  },\n  {\n    \"title\": \"Python test command\",\n    \"script\": \"python manage.py test ${dotSeparatedPath} --keepdb --parallel \",\n    \"description\": \"Python test\",  }\n]\n```",
+              "default": [],
+              "items": {
+                  "type": "object",
+                  "properties": {
+                      "title": {
+                          "type": "string",
+                          "description": "The display name of the command."
+                      },
+                      "script": {
+                          "type": "string",
+                          "description": "The script to execute when the command is selected."
+                      }
+                  }
+              }
+          }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

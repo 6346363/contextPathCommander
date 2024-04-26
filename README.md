@@ -1,71 +1,51 @@
-# contextpathcommander README
+# Context Path Commander
+"ContextPathCommander\" is a VSCode extension that allows users to execute specific commands based on the file path by right-clicking on files within the Explorer. Through a configuration file, users can customize the names of the commands displayed and the scripts that are executed. 
 
-This is the README for your extension "contextpathcommander". After writing up a brief description, we recommend including the following sections.
+「Context Path Commander」は、VSCodeのエクスプローラー内でファイルを右クリックした際に、ファイルパスに基づいて特定のコマンドを実行することができる拡張機能です。
+設定ファイルで、表示されるコマンドの名前や実行するスクリプトをカスタマイズできます。
 
-## Features
+## Usage Example
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Step 1: Configure Commands
+Add your custom commands to the `settings.json` file. Refer to the "Extension Settings" section for details on how to configure the commands.
 
-For example if there is an image subfolder under your extension project workspace:
+### Step 2: Right-Click on the Target File
+Right-click on the target file either in the File Explorer or in the open editor, and select "Context Path Commander" from the context menu.
 
-\!\[feature X\]\(images/feature-x.png\)
+![Context Menu](./images/readme_use_context.jpg)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### Step 3: Select Command from QuickPick
+A QuickPick interface will appear at the top of the screen. From this list, select the command you wish to execute.
 
-## Requirements
+![QuickPick Interface](./images/readme_use_quickpick.jpg)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+### Step 4: Command Execution
+The selected command will be executed in the terminal, with the file path placeholders (`${relativePath}`, `${absolutePath}`, `${dotSeparatedPath}`) replaced by the actual path of the file.
+
 
 ## Extension Settings
+List of commands that users can configure to appear in the QuickPick interface when triggered from either the context menu of the Explorer or an open editor. These commands can perform specific operations based on the file path selected. 
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Use `${relativePath}`/`${absolutePath}`/`${dotSeparatedPath}` as a placeholder in the script where you want the file path to be inserted.`${relativePath}` provides a file's path relative to the project's root, useful for project-specific scripts. `${absolutePath}` indicates a file's full system path, ideal for cross-directory operations. `${dotSeparatedPath}` formats paths with dots, crucial for referencing files in Python testing scripts. 
 
-For example:
+__Example:__
+ ```json
+ [
+    {
+      "title": "cat command",
+      "script": "cat ${relativePath}",
+      "description": "Show File Content"
+    },
+    {
+      "title": "cp command",
+      "script": "cp ${absolutePath} ./backup/",
+      "description": "Copy File",  
+    },
+    {    
+      "title": "Python test command",
+      "script": "python manage.py test ${dotSeparatedPath} --keepdb --parallel ",
+      "description": "Python test",
+    }
+  ]
+  ```
 
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**

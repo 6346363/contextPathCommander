@@ -1,4 +1,3 @@
-
 import * as vscode from 'vscode';
 
 
@@ -6,6 +5,10 @@ interface Command {
   title: string;
   script: string;
   description: string;
+}
+
+interface CommandItem extends vscode.QuickPickItem {
+  command: Command;  // コマンド情報を保持するためのプロパティを追加
 }
 
 // 新たに追加する相対パスをフォーマットする関数
@@ -25,10 +28,19 @@ function formatAbsolutePath(uri: vscode.Uri): string {
 // ドット区切りパスをフォーマットする関数
 function formatDotSeparatedPath(uri: vscode.Uri, workspaceFolder: vscode.WorkspaceFolder | undefined): string | undefined {
   const relativePath = vscode.workspace.asRelativePath(uri, false);
-  // 拡張子を取り除く
-  const basePath: string = relativePath.substring(0, relativePath.lastIndexOf('.'));
-
-  // '/'を'.'に置換する
+  
+  // フォルダーの場合は末尾の/を除去してからドット区切りに変換
+  if (relativePath.endsWith('/')) {
+    return relativePath.slice(0, -1).replace(/\//g, '.');
+  }
+  
+  // ファイルの場合は拡張子を取り除いてからドット区切りに変換
+  const lastDotIndex = relativePath.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    // 拡張子がない場合はそのままドット区切りに変換
+    return relativePath.replace(/\//g, '.');
+  }
+  const basePath = relativePath.substring(0, lastDotIndex);
   return basePath.replace(/\//g, '.');
 }
 
@@ -44,21 +56,40 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('No workspace folder found.');
         return;
       }
+
+      // ファイルパスを取得（フォルダーの場合は末尾に/が付く）
       const filePath = formatRelativePath(uri, workspaceFolder);
       const absolutePath = formatAbsolutePath(uri);
       const dotSeparatedPath = formatDotSeparatedPath(uri, workspaceFolder);
   
-      // ファイルパスが正しく取得できているか確認
-      if (!filePath || !absolutePath || !dotSeparatedPath) {return; }
+      // パスが正しく取得できているか確認
+      if (!filePath || !absolutePath || !dotSeparatedPath) {
+        vscode.window.showErrorMessage('Failed to get path information.');
+        return;
+      }
 
       // 設定を読み込む
       const config = vscode.workspace.getConfiguration('contextPathCommander');
       const commands: Command[] = config.get('commands', []);
 
-      const items = commands.map(cmd => ({
-        label: cmd.title,
-        description: cmd.description,
-      }));
+      // コマンドの重複をチェック
+      const titleCount = new Map<string, number>();
+      commands.forEach(cmd => {
+        titleCount.set(cmd.title, (titleCount.get(cmd.title) || 0) + 1);
+      });
+
+      const items: CommandItem[] = commands.map(cmd => {
+        const count = titleCount.get(cmd.title) || 0;
+        const label = count > 1 
+          ? `${cmd.title} (${cmd.description})`  // 重複がある場合は説明を表示
+          : cmd.title;
+        
+        return {
+          label: label,
+          description: cmd.description,
+          command: cmd  // コマンド情報を保持
+        };
+      });
 
       vscode.window.showQuickPick(
         items, {
@@ -68,27 +99,21 @@ export function activate(context: vscode.ExtensionContext) {
         if (!selection) {
           return;
         }
-        const selectedCommand = commands.find(cmd => cmd.title === selection.label);
+        // 選択されたアイテムから直接コマンド情報を取得
+        const selectedCommand = selection.command;
         if (selectedCommand) {
-          // 選択したコマンドのscriptを実行するなどの処理
           console.log(`Run script: ${selectedCommand.script}`);
-
-          // ワークスペースのルートディレクトリのパスを取得
           const workspacePath = workspaceFolder.uri.fsPath;
-          onCommandSelected(selection.label, commands, filePath, absolutePath, dotSeparatedPath, workspacePath);
+          onCommandSelected(selectedCommand, filePath, absolutePath, dotSeparatedPath, workspacePath);
         }
       });
-    // });
   });
 
   context.subscriptions.push(disposable);
 }
 
-function onCommandSelected(selectedTitle: string, commands: Command[], filePath: string, absolutePath: string, dotSeparatedPath: string, workspacePath: string) {
-  const selectedCommand = commands.find(cmd => cmd.title === selectedTitle);
-  if (selectedCommand) {
-      executeCommand(selectedCommand.script, filePath, absolutePath, dotSeparatedPath, workspacePath);
-  }
+function onCommandSelected(selectedCommand: Command, filePath: string, absolutePath: string, dotSeparatedPath: string, workspacePath: string) {
+  executeCommand(selectedCommand.script, filePath, absolutePath, dotSeparatedPath, workspacePath);
 }
 
 function executeCommand(commandScript: string, filePath: string, absolutePath: string, dotSeparatedPath: string, workspacePath: string) {
